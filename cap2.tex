@@ -1,0 +1,250 @@
+\section[Criptografía simétrica]{Criptografía simétrica o de clave privada}
+Hasta ahora, un ejemplo de criptografía simétrica se ve así:
+\img{img/cap2/1.png}{0.35}
+Alice desea mandar un mensaje $m$ a Bob, por lo que usa $\enc_k$ para encriptar el mensaje con la llave $k$ que compartieron anteriomente, enviando así el texto cifrado $c$ por un canal de comunicación. Bob, por su lado, puede desencriptar $c$ usando $\dec_k$ con la llave $k$ y así obtener el mensaje $m$. Frente a lo anterior, puede existir un adversario $E$ que quiera conocer la información del mensaje $m$ capturando el texto cifrado $c$.
+
+\subsection{Cifrado del César}
+Julio César cifró desplazando (\textit{shift}) las letras del alfabeto 3 lugares hacia delante: \ttt{A} se sustituyó por \ttt{D}, \ttt{B} por \ttt{E}, y así sucesivamente. Al final del alfabeto, las letras se envuelven alrededor y así \ttt{Z} fue reemplazado con \ttt{C}, y con \ttt{B}, y \ttt{X} con \ttt{A}. Por ejemplo, el cifrado del mensaje \ttt{BEGIN THE ATTACK NOW}, con espacios eliminados, da:
+$$
+    \ttt{EHJLQWKHDWWDFNQRZ}
+$$
+
+Un problema inmediato de este cifrado es que el método de encriptación es fijo; \textbf{no hay llave}. Así, \textbf{cualquiera que supiera cómo encriptó César sus mensajes podría desencriptarlos sin esfuerzo}. \medbreak
+
+A pesar de que es poco seguro, este cifrado nos servirá como base para entender OTP, un esquema de encriptación \textit{perfectamente secreto} (ya veremos que significa esto).
+
+\subsection{Una primera versión de One-Time Pad (OTP)}
+Veamos una construcción de OTP basada en el cifrado del César. Partimos enumerando las 27 letras del abecedario:
+\begin{table}[H]
+    \centering
+    \ttfamily % aplica la fuente ttfamily para toda la tabla
+    \resizebox{\textwidth}{!}{%
+        \begin{tabular}{>{\bfseries}c *{27}{c}}
+            A & B & C & D & E & F & G & H & I & J & K  & L  & M  & N  & N  & O  & P  & Q  & R  & S  & T  & U  & V  & W  & X  & Y  & Z  \\
+            0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 & 16 & 17 & 18 & 19 & 20 & 21 & 22 & 23 & 24 & 25 & 26
+        \end{tabular}%
+    }
+\end{table}
+
+Para enviar un mensaje de largo $\ell$, necesitaremos una llave de largo $\ell$. Por ejemplo, probemos mandar el mensaje \ttt{HOLAMUNDO} con la llave \ttt{SECRETKEY}:
+\img{img/cap2/2.png}{0.35}
+
+En el ejemplo anterior, a cada letra del mensaje y de la llave, se convierten a un número según la tabla del abecedario, luego se suman y les aplica la operación módulo 27 (ya que son 27 letras). Así, se obtiene un número que representa el cifrado de la letra correspondiente. Es decir:
+$$
+    \enc_{\ttt{SECRETKEY}}(\ttt{HOLAMUNDO}) = \ttt{ZSNRPÑWHN}
+$$
+Para desencriptar, hacemos el mismo proceso, solo que en vez de sumar, restamos.
+\img{img/cap2/3.png}{0.35}
+Y tenemos entonces que
+$$
+    \dec_{\ttt{SECRETKEY}}(\ttt{ZSNRPÑWHN}) = \ttt{HOLAMUNDO}
+$$
+
+Para \textbf{formalizar} este algoritmo, necesitamos convertir mensajes, llaves y textos cifrados en arreglos de enteros:
+$$
+    \begin{array}{ll}
+        m=\ttt{HOLAMUNDO} & \bar{m}=(7,15,11,0,12,21,13,3,15)    \\
+        k=\ttt{SECRETKEY} & \bar{k} =(19,4,2,18,4,20,10,4,25)    \\
+        c=\ttt{ZSNRPNWHN} & \bar{c} =(26,19,13,18,16,14,23,7,13)
+    \end{array}
+$$
+
+De la misma forma necesitamos hacer la conversión en la otra dirección:
+$$
+    a=(4,9,4,12,16,11,15) \quad \bar{a}=\ttt{EJEMPLO}
+$$
+
+Naturalmente, vemos que siempre se cumple que $\bar{\bar{s}} = s$. Con esto, definimos OTP en base a
+\alignformula{
+    \enc_k(m) &= \overline{(\bar{m} + \bar{k}) \bmod 27} \\
+    \dec_k(m) &= \overline{(\bar{c} - \bar{k}) \bmod 27}
+}
+
+Desde ahora supondremos que nuestros mensajes y llaves \textbf{son arreglos de números}. Con esta suposición en mente, definiremos OTP simplemente usando:
+\alignformula{
+    \enc_k(m) &= (m + k) \bmod 27 \\
+    \dec_k(m) &= (c - k) \bmod 27
+}
+
+Con esta definición, vemos entonces que
+$$
+    \dec_k(\enc_k(m)) = ((m + k) \bmod 27 - k) \bmod 27 = (m + k - k ) \bmod 27 = m \bmod 27 = m
+$$
+
+Generalizando, podemos describir $\text{OTP}^{N, \ell}$ sobre $\{0,1,\ldots, N - 1 \}$ y mensajes de largo $\ell$, con:
+$$
+    \ca{K} = \ca{M} = \ca{C} = \{0,1,\ldots, N - 1 \}
+$$
+
+$\gen$ es la \textbf{distribución de probabilidad uniforme} sobre $\{0,1,\ldots, N - 1 \}$, y
+\begin{align*}
+    \enc_k(m) & =(m+k) \bmod N \\
+    \dec_k(c) & =(c-k) \bmod N
+\end{align*}
+
+Esperamos que para un esquema criptográfico $(\gen, \enc, \dec)$ se cumpla que
+\alignformula{
+    \forall k \in \mathcal{K}.\; \forall m \in \mathcal{M}:\quad \dec_k\left(\enc_k(m)\right)=m
+}
+
+En este caso diremos que el esquema es \textit{perfectamente correcto}.
+
+\subsection{Perfect secrecy}
+
+Recordemos que un esquema criptográfico está compuesto por una tupla $(\gen, \enc, \dec)$, con un espacio de mensajes $\ca{M}$, un espacio de llaves $\ca{K}$ y un espacio de textos cifrados $\ca{C}$. ¿Cuándo podemos decir que un esquema así es \textit{perfectamente secreto}? Podríamos decir algo como lo siguiente: \textit{``Al ver un texto cifrado $c_0$ pasar, para el atacante el mensaje original $m$ podría haber sido cualquiera''}. \medbreak
+
+¿Cómo formalizamos lo anterior? Dado un texto cifrado $c_0$, se cumple que:
+$$
+    \forall m_0 \in \ca{M}.\quad \underset{k \sim \gen}{\Pr}[\enc_k(m_0) = c_0] = \frac{1}{|\ca{M}|}
+$$
+
+La probabilidad anterior se calcula viendo la probabilidad de haber elegido una llave que encripte $m_0$ como $c_0$:
+$$
+    \sum_{k\in \ca{K}:\; \enc_k(m_0) = c_0} \gen(k)
+$$
+
+Ahora, ¿qué pasa si el atacante tiene información sobre el mensaje? En otras palabras, el atacante posee una distribución de probabilidad $\mathbb{D}$ sobre $\ca{M}$ (conoce la probabilidad de un mensaje). Para cada distribución de probabilidad $\mathbb{D}$ sobre $\ca{M}$ y cada texto cifrado $c_0 \in \ca{C}$ se cumple que:
+$$
+    \forall m_0 \in \ca{M}: \quad \Pr_{\substack{m \sim \mathbb{D} \\[2pt] k \sim \gen}}\left[m=m_0 \mid \enc_k(m)=c_0\right]=\Pr_{m \sim \mathbb{D}}\left[m=m_0\right]
+$$
+
+Recordemos que $\Pr(A \mid B)=\frac{\Pr(A \cap B)}{\Pr(B)}$. Luego, ¿se cumple la siguiente ecuación?
+$$
+    \frac{\mathbb{D}\left(m_0\right) \sum_{k \in \mathcal{K}: \enc_k\left(m_0\right)=c_0} \gen(k)}{\sum_{m \in \mathcal{M}} \mathbb{D}(m) \sum_{k \in \mathcal{K}: \enc_k(m)=c_0} \gen(k)} \stackrel{?}{=} \mathbb{D}\left(m_0\right)
+$$
+
+Para responder la pregunta anterior, volvamos a OTP$^{N,\ell}$ y analicemos si es \textit{perfectamente secreto}.
+\begin{enumerate}
+    \item $\gen$ es la distribución uniforme $1/N^\ell$.
+    \item Para cada $c_0$ y cada $m_0$ existe una única llave $k$ tal que $\enc_k(m_0) = c_0$
+\end{enumerate}
+
+Sea $c_0 \in \ca{C}$ un texto cifrado y $m_0$ un mensaje, entonces:
+$$
+    \frac{\mathbb{D}\left(m_0\right) \sum_{k \in \mathcal{K}: \enc_k\left(m_0\right)=c_0} \gen(k)}{\sum_{m \in \mathcal{M}} \mathbb{D}(m) \sum_{k \in \mathcal{K}: \enc_k(m)=c_0} \gen(k)} = \frac{\mathbb{D}(m_0) \quad \cdot \quad \cancel{1/N^\ell}}{\cancelto{1}{\sum_{m \in \ca{M}}\mathbb{D}(m)} \quad \cdot \quad \cancel{1/N^\ell}} = \mathbb{D}(m_0)
+$$
+
+Por lo tanto, \textbf{OTP es un esquema perfectamente secreto} y luego, la ecuación anterior sí se cumple. \medbreak
+
+Como hemos podido ver, \textit{perfect secrecy} es una condición muy fuerte. Lamentablemente, pareciera ser molesto y/o poco razonable que la llave tenga que ser tan larga como el mensaje. ¿Hay alguna forma de modificar OTP para tener $|\ca{K}| < |\ca{M}|$ y seguir teniendo un esquema criptográfico \textit{perfectamente secreto}? Spoiler, no hay tal forma :(
+
+\teorema{}{}{
+    Sean $\ca{M}$, $\ca{K}$, $\ca{C}$ espacios de mensajes, llaves y textos cifrados, respectivamente. Si $|\ca{K}| < |\ca{M}|$, entonces no existe un esquema $(\gen, \enc, \dec)$ que sea \textit{perfectamente secreto}.
+}
+
+De hecho, en \textbf{el único tipo de ataque en que OTP es seguro es texto cifrado} (solo veo $c_0$, $c_1$, $\ldots$). Esto se cumple solo si la llave \textbf{no se repite} cada vez que se quiera encriptar el mensaje. En los demás tipos de ataque que vimos anteriormente, OTP deja de ser seguro.
+
+\paragraph*{Demostración teorema.} Supongamos que $|\ca{K}| < |\ca{M}| \leq \ca{C}$ y sea $(\gen, \enc, \dec)$ un esquema criptográfico. Sea $\mathbb{D}$ una distribución sobre $\ca{M}$ y $m_0 \in \ca{M}$ un mensaje tal que $\mathbb{D}(m_0) > 0$. Como $|\ca{K}| < |\ca{M}| \leq \ca{C}$, debe existir $c_0 \in \ca{C}$ para el cual \textbf{ninguna} llave $k \in \ca{K}$ satisface $\enc_k(m_0) = c_0$, por tanto
+$$
+    \cancelto{0}{\Pr_{\substack{m \sim \mathbb{D} \\ k \sim \gen}} [m = m_0 \mid \enc_k(m_0) = c_0]} \quad < \quad \mathbb{D}(m_0) = \Pr_{m \sim \mathbb{D}} [m = m_0]
+$$
+\hfill $\blacksquare$
+
+Con todo lo anterior, podemos formalizar la definición de \textit{perfect secrecy} para cualquier esquema criptográfico desde otra perspectiva.
+
+\paragraph*{Definición formal de perfect secrecy.} Un esquema criptográfico $(\gen, \enc, \dec)$ con un espacio de mensajes $\ca{M}$ es \textbf{perfectamente secreto} si para cada distribución de probabilidad para $M$, para cada mensaje $m_0 \in \ca{M}$ y para cada texto cifrado $c \in \ca{C}$ para el cual $\Pr[C = c_0] > 0$:
+$$
+    \Pr[M = m \mid C = c] = Pr[M = m]
+$$
+con $M$ y $C$ las variables aleatorias para el mensaje y el texto cifrado.
+\paragraph*{Lema.} Un esquema de encriptación $(\gen, \enc, \dec)$ con un espacio de mensajes $\ca{M}$ es perfectamente secreto si, y sólo si se cumple la siguiente ecuación para todo $m, m' \in \ca{M}$ y para todo $c \in \ca{C}$:
+$$
+    \Pr[\enc_k(m) = c] = \Pr[\enc_k(m') = c]
+$$
+En otras palabras, la distribución de probabilidad del texto cifrado cuando ciframos $m$ debe ser idéntica a la distribución de probabilidad del texto cifrado cuando se cifra $m'$.
+
+\subsection{Ahora sí, One-Time Pad}
+
+Primero, recordemos que $a \oplus b$ denota el OR-exclusivo (XOR) de dos \textit{strings} binarios de igual longitud $a$ y $b$ (es decir, si $a=a_1 \cdots a_{\ell}$ y $b=b_1 \cdots b_{\ell}$ son \textit{strings} de $\ell$ bits, entonces $a \oplus b$ es un \textit{string} de $\ell$ bits dado por $\left(a_1 \oplus b_1\right) \cdots\left(a_{\ell} \oplus b_{\ell}\right)$). En OTP, \textbf{la llave} es un \textit{string} uniforme de la \textbf{misma longitud} que el mensaje, y el texto cifrado se calcula simplemente haciendo XORing entre la llave y el mensaje. \medbreak
+
+Antes de hablar de la seguridad de OTP, verifiquemos su \textbf{corrección}: Para cada clave $k$ y cada mensaje $m$ se cumple que $\dec_k\left(\enc_k(m)\right) = \dec_k(k \oplus m) = k \oplus k \oplus m=m$, por lo que OTP constituye un esquema de cifrado válido.
+\paragraph*{Construcción del esquema.} Fijemos un entero $\ell > 0$. El espacio de mensajes $\ca{M}$, el espacio de llaves $\ca{K}$ y el espacio de textos cifrados $\ca{C}$ son todos equivalentes a $\{0,1\}^\ell$ (el conjunto de todos los \textit{strings} binarios de largo $\ell$).
+\begin{enumerate}
+    \item $\gen$: el algoritmo de generación de llaves elige una desde $\ca{K} = \{0,1\}^\ell$ de acuerdo a la distribución de probabilidad \textbf{uniforme} (es decir, cada uno de los $2^\ell$ \textit{strings} en el espacio es elegido como llave con probabilidad $1/2^\ell$).
+    \item $\enc$: dada una llave $k \in \{0,1\}^\ell$ y un mensaje $m \in \{0,1\}^\ell$, el algoritmo de encriptación retorna el texto cifrado $c = k \oplus m$.
+    \item $\dec$: dada una llave $k \in \{0,1\}^\ell$ y un texto cifrado $c \in \{0,1\}^\ell$, el algoritmo de decriptación retorna un mensaje $m = k \oplus c$.
+\end{enumerate}
+
+\paragraph*{Demostración de la construcción.} Calculamos $\Pr[C = c \mid M = m]$ para un $c \in \ca{C}$ arbitrario y un $m \in \ca{M}$ con $\Pr[M = m] > 0$. Por OTP, tenemos que
+$$
+    \Pr[C = c \mid M = m] = \Pr[K \oplus m = c \mid M = m] = \Pr[K = m \oplus c \mid M = m] = \frac{1}{2^\ell}
+$$
+donde $M$, $K$ y $C$ son las variables aleatorias para el mensaje, la llave y el texto cifrado, que son \textbf{independientes} entre sí. Aquí, la primera ecuación es por definición del esquema y el hecho que condicionamos el evento de que $M = m$, y la última ecuación es válida porque la llave $K$ es un $\ell$-bit uniforme  que es independiente de $M$. Fijemos cualquier distribución de probabilidad sobre $\ca{M}$. Usando el resultado de arriba, vemos que para cualquier $c \in \ca{C}$ tenemos:
+$$
+    \Pr[C = c] = \sum_{m \in \ca{M}} \Pr[C = c \mid M = m]\cdot \Pr[M = m] = \frac{1}{2^\ell} \cdot \sum_{m \in \ca{M}} \Pr[M = m] = \frac{1}{2^\ell}
+$$
+donde la suma es sobre $m \in \ca{M}$ con $\Pr[M = m] \neq 0$. Por el Teorema de Bayes:
+$$
+    \Pr[M = m \mid C = c] = \frac{\Pr[C = c \mid M = m] \cdot \Pr[M = m]}{\Pr[C = c]} = \frac{2^{-\ell} \cdot \Pr[M = m]}{2^{-\ell}} = \Pr[M = m]
+$$
+Concluimos entonces que OTP es \textit{perfectamente secreto}. \hfill $\blacksquare$
+
+\subsection{Permutaciones pseudo-aleatorias (PRP)}
+Recordemos que una noción de seguridad debe incluir:
+\begin{itemize}
+    \item Un modelo de amenaza (tipos de ataque), que define las capacidades de un \textbf{adversario}.
+    \item Una garantía de seguridad, lo cual normalmente se traduce en definir qué significa que el adversario no tenga éxito en su ataque.
+\end{itemize}
+
+Vamos a definir una primera noción de seguridad que nos va a permitir mostrar que OTP no es seguro si la llave es \textbf{reutilizada}, como mencionamos anteriormente. \medbreak
+
+Consideremos un largo $n$ fijo tal que los espacios de mensajes, llaves y textos cifrados cumplen que $\ca{M} = \ca{K} = \ca{C} = \{0,1\}^n$ y $(\gen, \enc, \dec)$ es un esquema criptográfico. Veamos un \textbf{juego} para definir una \textbf{pseudo-random permutation} (PRP):
+\begin{enumerate}
+    \item Un \textbf{verificador} elige $b \in \{0,1\}$ con distribución uniforme (por ejemplo, tirar una moneda).
+          \begin{enumerate}
+              \item[1.1.] Si $b = 0$, entonces elige una clave $k \in \ca{K}$ según la distribución $\gen$ y define $f(x) = \enc_k(x)$.
+              \item[1.2.] Si $b = 1$, entonces elige una permutación $\pi$ con distribución uniforme y define $f(x) = \pi(x)$
+          \end{enumerate}
+    \item El \textbf{adversario} elige una palabra $y \in \{0,1\}^n$ y el verificador responde con $f(y)$.
+    \item El paso 2. es repetido $q$ veces.
+    \item El adversario indica si $b = 0$ o $b = 1$, y gana si su elección es correcta.
+\end{enumerate}
+
+La probabilidad de que el adversario gane depende de la cantidad de rondas $q$. Si el adversario ``tira una moneda'' en el paso 4., entonces su probabilidad de ganar es $\frac{1}{2}$.
+
+\paragraph{Definición de PRP.} Decimos que $(\gen, \enc, \dec)$ es una permutación pseudo-aleatoria si \textbf{no existe} un adversario que pueda ganar el juego con una probabilidad significativamente mayor a $\frac{1}{2}$. \medbreak
+
+No imponemos restricciones en las capacidades computacionales del adversario, podríamos tener una noción más débil donde el adversario puede realizar una cantidad de operaciones que es polinomial en $n$. Por ejemplo, solo puede realizar $n^2$ operaciones. Debemos entonces definir qué significa que \textit{la probabilidad de ganar el juego sea significativamente mayor a} $\frac{1}{2}$ (podría ser $\frac{3}{4}$, por ejemplo). También, tenemos que indicar cuál es el número de rondas $q$.
+
+\paragraph{Un primer ejemplo.} Considere un esquema $(\gen, \enc, \dec)$ tal que:
+\begin{itemize}
+    \item $\gen(k_0) = 1$ para una llave fija $k_0 \in \ca{K}$.
+    \item $\gen(k) = 0$ para todo $k \in \ca{K}$ tal que $k \neq k_0$.
+\end{itemize}
+Vamos a demostrar que este esquema criptográfico no es una PRP con una ronda ($q = 1$). La estrategia del adversario es la siguiente:
+\begin{itemize}
+    \item En el paso 2. toma $y = 0^n$ y recibe $f(y)$ como respuesta del verificador.
+    \item Si $f(y) = \enc_{k_0}(y)$ entonces indica que $b = 0$, si no, indica que $b = 1$.
+\end{itemize}
+¿Puede el adversario equivocarse al indicar el valor de $b$? ¿Cuál es la probabilidad de que gane el juego? Veamos. Definamos $A$ como el evento ``Adversario gana el juego'', entonces:
+\begin{align*}
+    \Pr[A] & = \Pr[A \mid b = 0] \cdot \Pr[b = 0] + \Pr[A \mid b = 1] \cdot \Pr[b = 1]   \\
+           & = \Pr[A \mid b = 0] \cdot \frac{1}{2} + \Pr[A \mid b = 1] \cdot \frac{1}{2}
+\end{align*}
+Vemos que:
+\begin{itemize}
+    \item $\Pr[A \mid b = 0] = 1$
+    \item $\Pr[A \mid b = 1] = \Pr[\pi(y) \neq \enc_{k_0}(y)]$
+
+          En este caso el verificador elige una permutación $\pi: \{0,1\}^n \to \{0,1\}^n$ con distribución uniforme. Si $\pi(y) = \enc_{k_0}(y)$, entonces el adversario da la respuesta equivocada. Luego,
+          \begin{align*}
+              \Pr[\pi(y) \neq \enc_{k_0}(y)] & = 1 - \Pr[\pi(y) = \enc_{k_0}(y)]                          \\
+                                             & = 1 - \frac{\text{casos favorables}}{\text{casos totales}} \\
+                                             & = 1 - \frac{(2^n - 1)!}{(2^n)!}                            \\
+                                             & = 1 - \frac{1}{2^n}
+          \end{align*}
+\end{itemize}
+De la ecuación anterior:
+\begin{itemize}
+    \item \textbf{Casos totales:} número de permutaciones $\pi: \{0,1\}^n \to \{0,1\}^n$.
+    \item \textbf{Casos favorables:} número de permutaciones $\pi: \{0,1\}^n \to \{0,1\}^n$ tales que $\pi(0^n)$ es igual al valor fijo $\enc_{k_0}(0^n)$.
+\end{itemize}
+
+Finalmente, tenemos que
+\begin{align*}
+    \Pr[A] & = \Pr[A \mid b = 0] \cdot \frac{1}{2} + \Pr[A \mid b = 1] \cdot \frac{1}{2} \\
+           & = 1 \cdot \frac{1}{2} + \left(1 - \frac{1}{2^n}\right) \cdot \frac{1}{2} \\
+           &= 1 - \frac{1}{2^{n+1}}
+\end{align*}
+
+Por ende, el adversario \textbf{sí} gana el juego con probabilidad significativamente mayor a $\frac{1}{2}$. Puede verificar este hecho tomando $n = 10$ o $n = 100$.

@@ -1,0 +1,105 @@
+\section{Introducción}
+
+\subsection{Dos problemas fundamentales: cifrado y autentificación}
+
+La criptografía moderna implica \textit{el estudio de técnicas matemáticas para proteger la información digital, los sistemas y los cálculos distribuidos contra ataques de adversarios}. \medbreak
+
+La seguridad de los \textbf{esquemas criptográficos modernos} (hablaremos de ellos más adelante) recae en una \textbf{llave secreta} compartida con anterioridad entre el emisor (A, de \textit{Alice}) y receptor del mensaje (B, de \textit{Bob}), que debe ser desconocida para algún adversario (E, de \textit{Eavesdropper}). Este escenario, en donde las partes que se comunican comparten alguna información secreta por adelantado, es conocida como \textbf{encriptación de llave privada} (\textit{private-key encryption}). \medbreak
+
+En este contexto, Alice y Bob comparten una llave privada cuando se quieren comunicar en secreto. Uno de ellos, por ejemplo, Alice, puede mandar un \textbf{mensaje} (\textit{plain text}, texto plano) hacia el otro usando la llave para \textbf{encriptar} el mensaje y así obtener un \textbf{texto cifrado} o \textit{cyphertext} que es trasmitido al receptor. Bob, el receptor, usa la misma llave para \textbf{decriptar} el texto cifrado y recuperar el mensaje original.
+
+\fig{img/cap1/1.png}{0.4}{Alice manda un mensaje $m$ a Bob usando una llave privada $k$ que compartieron anteriormente}
+
+La \textbf{autentificación}, en cambio, es el proceso en el que nos interesa garantizar la \textbf{integridad del mensaje} contra un adversario que podría modificar o mandar otros mensajes por el canal de comunicación. \medbreak
+
+Por ejemplo, Alice y Bob, que desean comunicarse de forma autenticada, empiezan por generar y compartir una llave secreta $k$ antes de su comunicación. Cuando una de las partes desea enviar un mensaje $m$ a la otra, calcula una etiqueta (\textit{tag}) $t$ basada en el mensaje y la llave compartida, y envía el mensaje $m$ junto con $t$ a la otra parte. El \textit{tag} se calcula utilizando un \textit{algoritmo de generación de tags} denotado por $\mac$; así, reformulando lo que acabamos de decir, el emisor de un mensaje $m$ calcula $t \leftarrow \mac_k(m)$ y transmite $(m, t)$ al receptor. Al recibir $(m, t)$, la segunda parte verifica si $t$ es un \textit{tag} válido en el mensaje $m$ (con respecto a la llave compartida) o no. Esto se hace ejecutando un \textit{algoritmo de verificación} $\ver$ que toma como entrada la llave compartida, así como un mensaje $m$ y un \textit{tag} $t$, e indica si el \textit{tag} dado es válido. Profundizaremos más sobre este tema en el capítulo X.
+
+\fig{img/cap1/2.png}{0.35}{Alice manda $(m,t)$ a Bob, generando $t$ con $\mac$ y Bob debe verificar $t$ con $\ver$}
+
+
+\subsection{Sintaxis de encriptación}
+Formalmente, un esquema de encriptación de llave privada es definido por un \textbf{espacio de mensajes} $\ca{M}$, un \textbf{espacio de llaves} $\ca{K}$ y un \textbf{espacio de textos cifrados} $\ca{C}$, junto con tres funciones: una para generar llaves ($\gen$), una para encriptar ($\enc$) y otra para decriptar ($\dec$). El espacio de mensajes $\ca{M}$ define el conjunto ``legal'' de mensajes, es decir, los soportados por el esquema. Las funciones del esquema tienen la siguiente funcionalidad:
+\begin{itemize}
+    \item $\gen$ es un algoritmo de probabilidades que retorna una llave $k$ elegida acorde a una distribución. Es decir, $\gen: \ca{K} \to [0,1]$ tal que
+          $$
+              \sum_{k\in \ca{K}}\gen(k) = 1
+          $$
+
+    \item $\enc$ es una familia de algoritmos de encriptación que toma como input la llave $k$ y el mensaje $m$, y retorna un texto cifrado $c$. Denotamos $\enc_k(m)$ la encriptación del texto plano $m$ usando la llave $k$.
+          $$
+              \enc = \{ \enc_k \mid k \in \ca{K} \}, \quad \text{con } \enc_k: \ca{M} \to \ca{C}, \;\forall k \in \ca{K}
+          $$
+
+    \item $\dec$ es una familia de algoritmos de decriptación que toma como input la llave $k$ y el texto cifrado $c$, y retorna un texto plano $m$. Denotamos $\dec_k(c)$ la decriptación del texto cifrado $c$ usando la llave $k$.
+          $$
+              \dec = \{ \dec_k \mid k \in \ca{K} \}, \quad \text{con } \dec_k: \ca{C} \to \ca{M}, \;\forall k \in \ca{K}
+          $$
+\end{itemize}
+
+Un esquema de encriptación debe satisfacer el siguiente requisito de correctitud: para cada llave $k$ generada por $\gen$ y para cada mensaje $m \in \ca{M}$, se tiene que
+
+\alignformula{
+    \dec_k(\enc_k(m)) = m
+}
+
+En otras palabras, encriptar un mensaje y luego decriptar el texto cifrado resultante usando la misma llave devuelve el mensaje original.
+
+\subsection{Principio de Kerckhoffs}
+Si un adversario conoce el algoritmo $\dec$ y la llave $k$ compartida por las dos partes comunicantes, podrá descifrar cualquier texto cifrado transmitido por dichas partes. Por este motivo, las partes comunicantes deben compartir la llave $k$ de forma segura y mantener $k$ completamente oculta para los demás. ¿Quizás también deberían mantener en secreto el algoritmo de descifrado $\dec$? ¿No sería mejor que mantuvieran en secreto todos los detalles del esquema de cifrado? \medbreak
+
+Lo anterior condujo a Auguste Kerckhoffs en 1983 a declarar el siguiente principio:
+\begin{center}
+    \textit{``La seguridad de un sistema criptográfico \textbf{no} debe depender de que los algoritmos de cifrado y descifrado sean secretos, solo debe depender de que las claves sean secretas''.}
+\end{center}
+
+Es decir, un esquema de encriptación debe diseñarse para que sea seguro \textit{incluso} si un espía conoce todos los detalles del esquema, siempre que el atacante no conozca la clave utilizada. Dicho de otro modo, la seguridad no debe depender de que el esquema de cifrado sea secreto; en cambio, el principio de Kerckhoffs exige que la seguridad dependa únicamente del secreto de la clave. \medbreak
+
+Seguimos este principio por tres simples motivos:
+\begin{itemize}
+    \item Es más fácil mantener la privacidad de una llave que la de un algoritmo.
+    \item Si la seguridad se ve comprometida es más fácil cambiar una llave que un algoritmo.
+    \item Es mejor usar algoritmos públicos que hayan sido ampliamente verificados.
+\end{itemize}
+
+\subsection{Principios de la criptografía moderna}
+
+Podemos mencionar tres grandes principios para la criptografía moderna:
+\begin{enumerate}
+    \item \textbf{Definiciones formales:} Es importante definir formalmente los sistemas criptográficos y nociones de seguridad usados.
+          \begin{center}
+              \textit{``Si no sabes lo que quieres conseguir, ¿cómo vas a saber si lo has conseguido?''}
+          \end{center}
+
+          Las definiciones formales facilitan esa comprensión al ofrecer una descripción clara de las amenazas que entran en juego y de las garantías de seguridad deseadas. Como tales, las definiciones pueden ayudar a guiar el diseño de esquemas criptográficos. De hecho, es mucho mejor formalizar lo que se necesita \textit{antes} de que comience el proceso de diseño, en lugar de llegar a una definición \textit{post facto} ---posterior a los hechos--- una vez que el diseño se ha completado.
+
+    \item \textbf{Supuestos precisos:} Es importante que los supuestos detrás del funcionamiento de un sistema criptográfico tengan una \textbf{formulación precisa} y sean \textbf{conocidos}. \medbreak
+
+          La mayoría de los esquemas criptográficos modernos no pueden demostrarse seguros de forma incondicional; para ello habría que resolver cuestiones de la teoría de la complejidad computacional que hoy en día parecen lejos de tener respuesta. El resultado de esta desafortunada situación es que las pruebas de seguridad suelen basarse en suposiciones. La criptografía moderna exige que estas suposiciones sean explícitas y precisas desde el punto de vista matemático. En el nivel más básico, esto se debe a que las pruebas de seguridad así lo exigen.
+
+    \item \textbf{Pruebas de seguridad:} Es importante construir \textbf{demostraciones formales de seguridad} (basadas en las definiciones y supuestos). \medbreak
+
+          Los dos principios anteriores que acabamos de describir nos permiten alcanzar nuestro objetivo de proporcionar pruebas rigurosas de que una construcción satisface una definición dada bajo ciertos supuestos. Estas pruebas son especialmente importantes en el contexto de la criptografía, donde hay un atacante que intenta activamente ``romper'' algún esquema. Las pruebas de seguridad ofrecen una garantía irrefutable ---relativa a la definición y los supuestos--- de que ningún atacante tendrá éxito; esto es mucho mejor que adoptar un enfoque sin principios o heurístico del problema. Sin una prueba de que ningún adversario con los recursos especificados puede romper un esquema, sólo nos queda nuestra intuición de que es así. La experiencia ha demostrado que la intuición en criptografía y seguridad informática es desastrosa. Hay innumerables ejemplos de esquemas no probados que se rompieron, a veces inmediatamente y otras años después de ser desarrollados.
+\end{enumerate}
+
+\subsection{Seguridad, noción de adversario y tipos de ataque}
+En general, una definición de seguridad tiene dos componentes: una \textbf{garantía de seguridad} (o, desde el punto de vista del adversario, lo que constituye un ataque exitoso) y un \textbf{modelo de amenaza} (tipos de ataque). La garantía de seguridad define lo que se pretende que el esquema impida al atacante hacer, mientras que el modelo de amenaza describe el poder del adversario, es decir, qué acciones se supone que el atacante puede llevar a cabo. \medbreak
+
+Los siguientes puntos engloban lo que un esquema de encriptación debería \textbf{garantizar}:
+\begin{itemize}
+    \item \textit{Debe ser imposible para un adversario recuperar la llave:} aunque la seguridad criptográfica depende de que el adversario no pueda encontrar la llave, este requisito por sí solo no es suficiente para garantizar la seguridad del esquema.
+    \item \textit{Debe ser imposible para un adversario recuperar el mensaje (texto plano) a partir del texto cifrado:} este requisito es fundamental para la seguridad del cifrado. Si un adversario puede recuperar el mensaje original a partir del texto cifrado, entonces el esquema de cifrado no es seguro.
+    \item \textit{Debe ser imposible para un adversario recuperar cualquier carácter del mensaje a partir del texto cifrado:} este requisito es aún más riguroso, ya que no sólo busca proteger el mensaje completo, sino también la información contenida en él.
+    \item \textit{La ``respuesta correcta'': independientemente de la información que tenga el adversario, el texto cifrado no debe filtrar información adicional sobre el mensaje}. Esta definición amplia garantiza que el esquema de cifrado protege la información sin importar cuánta información tenga el adversario. El objetivo del cifrado es evitar que el adversario obtenga cualquier información adicional sobre el mensaje, lo que se logra si el texto cifrado no contiene información adicional más allá de lo que ya se sabe.
+\end{itemize}
+
+El \textbf{modelo de amenaza} (los tipos de ataque) especifica qué ``poder'' se supone que tiene el atacante, pero no impone ninguna restricción en la \textit{estrategia} del adversario. Esta es una distinción importante: especificamos lo que asumimos sobre las habilidades del adversario, pero \textbf{no} asumimos nada acerca de cómo usa esas habilidades. Es imposible prever qué estrategias podrían ser utilizadas en un ataque, y la historia ha demostrado que los intentos de hacerlo están destinados al fracaso. Algunos de los tipos de ataque son:
+\begin{itemize}
+    \item \textbf{Ciphertext-only attack:} es el ataque más básico, en el que el adversario solo observa el texto cifrado y trata de determinar información sobre el texto plano subyacente. Este es el modelo de amenaza que hemos estado asumiendo implícitamente al discutir el esquema de encriptación definido anteriormente.
+    \item \textbf{Known-plaintext attack:} aquí, el adversario puede aprender uno o más pares de texto plano/cifrado generados utilizando alguna clave. El objetivo del adversario es deducir información sobre el texto plano subyacente de otro texto cifrado producido utilizando la misma clave.
+    \item \textbf{Chosen-plaintext attack:} en este ataque, el adversario puede obtener pares de texto plano/cifrado para textos planos de su elección.
+    \item \textbf{Chosen-ciphertext attack:} el último tipo de ataque es aquel en el que el adversario es capaz de obtener (alguna información sobre) el descifrado de textos cifrados de su elección. El objetivo del adversario, una vez más, es aprender información sobre el texto plano subyacente de algún otro texto cifrado (cuyo descifrado el adversario no puede obtener directamente) generado utilizando la misma clave.
+\end{itemize}
+
+Aunque los modelos de amenaza están listados en orden de creciente fuerza, ninguno es inherentemente mejor que otro; el adecuado a utilizar depende del entorno en el que se despliega un esquema de encriptación.
+
+\newpage
