@@ -132,7 +132,7 @@ Como hemos podido ver, \textit{perfect secrecy} es una condición muy fuerte. La
     Sean $\ca{M}$, $\ca{K}$, $\ca{C}$ espacios de mensajes, llaves y textos cifrados, respectivamente. Si $|\ca{K}| < |\ca{M}|$, entonces no existe un esquema $(\gen, \enc, \dec)$ que sea \textit{perfectamente secreto}.
 }
 
-De hecho, en \textbf{el único tipo de ataque en que OTP es seguro es texto cifrado} (solo veo $c_0$, $c_1$, $\ldots$). Esto se cumple solo si la llave \textbf{no se repite} cada vez que se quiera encriptar el mensaje. En los demás tipos de ataque que vimos anteriormente, OTP deja de ser seguro.
+Dado su nombre, podemos decir que OTP solo es seguro solo si \textbf{no} se reutilizan las llaves cada vez que se encripta un mensaje. Si se llega a utilizar la misma llave con la que se cifró el mensaje, OTP \textbf{no es seguro bajo ningún ataque}.
 
 \paragraph*{Demostración teorema.} Supongamos que $|\ca{K}| < |\ca{M}| \leq \ca{C}$ y sea $(\gen, \enc, \dec)$ un esquema criptográfico. Sea $\mathbb{D}$ una distribución sobre $\ca{M}$ y $m_0 \in \ca{M}$ un mensaje tal que $\mathbb{D}(m_0) > 0$. Como $|\ca{K}| < |\ca{M}| \leq \ca{C}$, debe existir $c_0 \in \ca{C}$ para el cual \textbf{ninguna} llave $k \in \ca{K}$ satisface $\enc_k(m_0) = c_0$, por tanto
 $$
@@ -155,27 +155,27 @@ En otras palabras, la distribución de probabilidad del texto cifrado cuando cif
 
 \subsection{Ahora sí, One-Time Pad}
 
-Primero, recordemos que $a \oplus b$ denota el OR-exclusivo (XOR) de dos \textit{strings} binarios de igual longitud $a$ y $b$ (es decir, si $a=a_1 \cdots a_{\ell}$ y $b=b_1 \cdots b_{\ell}$ son \textit{strings} de $\ell$ bits, entonces $a \oplus b$ es un \textit{string} de $\ell$ bits dado por $\left(a_1 \oplus b_1\right) \cdots\left(a_{\ell} \oplus b_{\ell}\right)$). En OTP, \textbf{la llave} es un \textit{string} uniforme de la \textbf{misma longitud} que el mensaje, y el texto cifrado se calcula simplemente haciendo XORing entre la llave y el mensaje. \medbreak
+Primero, recordemos que $a \oplus b$ denota el OR-exclusivo (XOR) de dos \textit{strings} binarios de igual longitud $a$ y $b$ (es decir, si $a=a_1 \cdots a_n$ y $b=b_1 \cdots b_n$ son \textit{strings} de $n$ bits, entonces $a \oplus b$ es un \textit{string} de $n$ bits dado por $\left(a_1 \oplus b_1\right) \cdots\left(a_n \oplus b_n\right)$). En OTP, \textbf{la llave} es un \textit{string} uniforme de la \textbf{misma longitud} que el mensaje, y el texto cifrado se calcula simplemente haciendo XORing entre la llave y el mensaje. \medbreak
 
 Antes de hablar de la seguridad de OTP, verifiquemos su \textbf{corrección}: Para cada clave $k$ y cada mensaje $m$ se cumple que $\dec_k\left(\enc_k(m)\right) = \dec_k(k \oplus m) = k \oplus k \oplus m=m$, por lo que OTP constituye un esquema de cifrado válido.
-\paragraph*{Construcción del esquema.} Fijemos un entero $\ell > 0$. El espacio de mensajes $\ca{M}$, el espacio de llaves $\ca{K}$ y el espacio de textos cifrados $\ca{C}$ son todos equivalentes a $\{0,1\}^\ell$ (el conjunto de todos los \textit{strings} binarios de largo $\ell$).
+\paragraph*{Construcción del esquema.} Fijemos un entero $n > 0$. El espacio de mensajes $\ca{M}$, el espacio de llaves $\ca{K}$ y el espacio de textos cifrados $\ca{C}$ son todos equivalentes a $\{0,1\}^n$ (el conjunto de todos los \textit{strings} binarios de largo $n$).
 \begin{enumerate}
-    \item $\gen$: el algoritmo de generación de llaves elige una desde $\ca{K} = \{0,1\}^\ell$ de acuerdo a la distribución de probabilidad \textbf{uniforme} (es decir, cada uno de los $2^\ell$ \textit{strings} en el espacio es elegido como llave con probabilidad $1/2^\ell$).
-    \item $\enc$: dada una llave $k \in \{0,1\}^\ell$ y un mensaje $m \in \{0,1\}^\ell$, el algoritmo de encriptación retorna el texto cifrado $c = k \oplus m$.
-    \item $\dec$: dada una llave $k \in \{0,1\}^\ell$ y un texto cifrado $c \in \{0,1\}^\ell$, el algoritmo de decriptación retorna un mensaje $m = k \oplus c$.
+    \item $\gen$: el algoritmo de generación de llaves elige una desde $\ca{K} = \{0,1\}^n$ de acuerdo a la distribución de probabilidad \textbf{uniforme} (es decir, cada uno de los $2^n$ \textit{strings} en el espacio es elegido como llave con probabilidad $1/2^n$).
+    \item $\enc$: dada una llave $k \in \{0,1\}^n$ y un mensaje $m \in \{0,1\}^n$, el algoritmo de encriptación retorna el texto cifrado $c = k \oplus m$.
+    \item $\dec$: dada una llave $k \in \{0,1\}^n$ y un texto cifrado $c \in \{0,1\}^n$, el algoritmo de decriptación retorna un mensaje $m = k \oplus c$.
 \end{enumerate}
 
 \paragraph*{Demostración de la construcción.} Calculamos $\Pr[C = c \mid M = m]$ para un $c \in \ca{C}$ arbitrario y un $m \in \ca{M}$ con $\Pr[M = m] > 0$. Por OTP, tenemos que
 $$
-    \Pr[C = c \mid M = m] = \Pr[K \oplus m = c \mid M = m] = \Pr[K = m \oplus c \mid M = m] = \frac{1}{2^\ell}
+    \Pr[C = c \mid M = m] = \Pr[K \oplus m = c \mid M = m] = \Pr[K = m \oplus c \mid M = m] = \frac{1}{2^n}
 $$
-donde $M$, $K$ y $C$ son las variables aleatorias para el mensaje, la llave y el texto cifrado, que son \textbf{independientes} entre sí. Aquí, la primera ecuación es por definición del esquema y el hecho que condicionamos el evento de que $M = m$, y la última ecuación es válida porque la llave $K$ es un $\ell$-bit uniforme  que es independiente de $M$. Fijemos cualquier distribución de probabilidad sobre $\ca{M}$. Usando el resultado de arriba, vemos que para cualquier $c \in \ca{C}$ tenemos:
+donde $M$, $K$ y $C$ son las variables aleatorias para el mensaje, la llave y el texto cifrado, que son \textbf{independientes} entre sí. Aquí, la primera ecuación es por definición del esquema y el hecho que condicionamos el evento de que $M = m$, y la última ecuación es válida porque la llave $K$ es un $n$-bit uniforme  que es independiente de $M$. Fijemos cualquier distribución de probabilidad sobre $\ca{M}$. Usando el resultado de arriba, vemos que para cualquier $c \in \ca{C}$ tenemos:
 $$
-    \Pr[C = c] = \sum_{m \in \ca{M}} \Pr[C = c \mid M = m]\cdot \Pr[M = m] = \frac{1}{2^\ell} \cdot \sum_{m \in \ca{M}} \Pr[M = m] = \frac{1}{2^\ell}
+    \Pr[C = c] = \sum_{m \in \ca{M}} \Pr[C = c \mid M = m]\cdot \Pr[M = m] = \frac{1}{2^n} \cdot \sum_{m \in \ca{M}} \Pr[M = m] = \frac{1}{2^n}
 $$
 donde la suma es sobre $m \in \ca{M}$ con $\Pr[M = m] \neq 0$. Por el Teorema de Bayes:
 $$
-    \Pr[M = m \mid C = c] = \frac{\Pr[C = c \mid M = m] \cdot \Pr[M = m]}{\Pr[C = c]} = \frac{2^{-\ell} \cdot \Pr[M = m]}{2^{-\ell}} = \Pr[M = m]
+    \Pr[M = m \mid C = c] = \frac{\Pr[C = c \mid M = m] \cdot \Pr[M = m]}{\Pr[C = c]} = \frac{2^{-n} \cdot \Pr[M = m]}{2^{-n}} = \Pr[M = m]
 $$
 Concluimos entonces que OTP es \textit{perfectamente secreto}. \hfill $\blacksquare$
 
@@ -226,7 +226,7 @@ Vemos que:
     \item $\Pr[A \mid b = 0] = 1$
     \item $\Pr[A \mid b = 1] = \Pr[\pi(y) \neq \enc_{k_0}(y)]$
 
-          En este caso el verificador elige una permutación $\pi: \{0,1\}^n \to \{0,1\}^n$ con distribución uniforme. Si $\pi(y) = \enc_{k_0}(y)$, entonces el adversario da la respuesta equivocada. Luego,
+          En este caso el verificador elige una permutación $\pi: \{0,1\}^n \to \{0,1\}^n$ con \textbf{distribución uniforme}. Si $\pi(y) = \enc_{k_0}(y)$, entonces el adversario da la respuesta equivocada. Luego,
           \begin{align*}
               \Pr[\pi(y) \neq \enc_{k_0}(y)] & = 1 - \Pr[\pi(y) = \enc_{k_0}(y)]                          \\
                                              & = 1 - \frac{\text{casos favorables}}{\text{casos totales}} \\
@@ -243,8 +243,56 @@ De la ecuación anterior:
 Finalmente, tenemos que
 \begin{align*}
     \Pr[A] & = \Pr[A \mid b = 0] \cdot \frac{1}{2} + \Pr[A \mid b = 1] \cdot \frac{1}{2} \\
-           & = 1 \cdot \frac{1}{2} + \left(1 - \frac{1}{2^n}\right) \cdot \frac{1}{2} \\
-           &= 1 - \frac{1}{2^{n+1}}
+           & = 1 \cdot \frac{1}{2} + \left(1 - \frac{1}{2^n}\right) \cdot \frac{1}{2}    \\
+           & = 1 - \frac{1}{2^{n+1}}
 \end{align*}
 
 Por ende, el adversario \textbf{sí} gana el juego con probabilidad significativamente mayor a $\frac{1}{2}$. Puede verificar este hecho tomando $n = 10$ o $n = 100$.
+
+\paragraph{Un segundo ejemplo.} Dado que $\ca{M} = \ca{K} = \ca{C} = \{0,1\}^n$, debemos realizar las operaciones de OTP en módulo 2:
+\img{img/cap2/4.png}{0.25}
+
+Veremos que OTP no es una PRP con dos rondas. La estrategia del adversario es la siguiente:
+\begin{itemize}
+    \item En el paso 2. toma $y_1 = 0^n$ e $y_2 = 1^n$, y recibe $f(y_1)$ y $f(y_2)$ como respuesta del verificador.
+    \item Si $y_2 + f(y_1) = f(y_2)$ entonces indica que $b = 0$, sino indica que $b = 1$.
+\end{itemize}
+
+Si $b = 0$, el verificador está usando OTP y existe una clave $k$ tal que:
+\begin{align*}
+    y_1 + k &= f(y_1) \\
+    y_2 + k &= f(y_2)
+\end{align*}
+
+Como $y_1 = 0^n$, se tiene que $k = f(y_1)$ (sumamos 0 en binario), y se concluye que $y_2 + f(y_1) = f(y_2)$. Luego, consideremos nuevamente el evento $A$ como ``Adversario gana el juego'', entonces, la probabilidad de ganar el juego con dos rondas es la siguiente:
+\begin{align*}
+    \Pr[A] & = \Pr[A \mid b = 0] \cdot \Pr[b = 0] + \Pr[A \mid b = 1] \cdot \Pr[b = 1]   \\
+           & = \Pr[A \mid b = 0] \cdot \frac{1}{2} + \Pr[A \mid b = 1] \cdot \frac{1}{2}
+\end{align*}
+Vemos que:
+\begin{itemize}
+    \item $\Pr[A \mid b = 0] = 1$
+    \item $\Pr[A \mid b = 1] = \Pr[\pi(y_2) \neq y_2 + \pi(y_1)]$
+    
+    En este caso, el verificador elige una permutación $\pi:\{0,1\}^n \to \{0,1\}^n$ con \textbf{distribución uniforme}. Si $\pi(y_2) = y_2 + \pi(y_1)$, entonces el adversario da la respuesta equivocada. Así, vemos que:
+    \begin{align*}
+        \Pr[\pi(y_2) \neq y_2 + \pi(y_1)] &= 1 - \Pr[\pi(y_2) = y_2 + \pi(y_1)] \\
+        &= 1 - \frac{\text{casos favorables}}{\text{casos totales}} \\ 
+        &= 1 - \frac{2^n \cdot (2^n - 2)!}{(2^n)!} \\
+        &= 1 - \frac{1}{2^n - 1}
+    \end{align*}
+\end{itemize}
+De la ecuación anterior:
+\begin{itemize}
+    \item \textbf{Casos totales:} número de permutaciones $\pi:\{0,1\}^n\to\{0,1\}^n$.
+    \item \textbf{Casos favorables:} número de permutaciones $\pi:\{0,1\}^n\to\{0,1\}^n$ tales que $\pi(1^n) = 1^n + \pi(0^n)$.
+\end{itemize}
+Finalmente, tenemos que
+\begin{align*}
+    \Pr[A] & = \Pr[A \mid b = 0] \cdot \frac{1}{2} + \Pr[A \mid b = 1] \cdot \frac{1}{2} \\
+           & = 1 \cdot \frac{1}{2} + \left(1 - \frac{1}{2^n - 1}\right) \cdot \frac{1}{2}    \\
+           & = 1 - \frac{1}{2 \cdot (2^n - 1)}
+\end{align*}
+Por ende, el adversario gana el juego con una probabilidad significativamente mayor a $\frac{1}{2}$, y entonces OTP no es una PRP con dos rondas.
+
+\subsection{AES}
