@@ -144,8 +144,4 @@ TSWLatexianTemp*
 *.lpz
 *.xwm
 __latexindent_temp.tex
-Clases/
-cap3.tex
-cap4.tex
-cap5.tex
-cap6.tex
+clases/

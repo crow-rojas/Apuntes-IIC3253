@@ -260,8 +260,8 @@ Veremos que OTP no es una PRP con dos rondas. La estrategia del adversario es la
 
 Si $b = 0$, el verificador está usando OTP y existe una clave $k$ tal que:
 \begin{align*}
-    y_1 + k &= f(y_1) \\
-    y_2 + k &= f(y_2)
+    y_1 + k & = f(y_1) \\
+    y_2 + k & = f(y_2)
 \end{align*}
 
 Como $y_1 = 0^n$, se tiene que $k = f(y_1)$ (sumamos 0 en binario), y se concluye que $y_2 + f(y_1) = f(y_2)$. Luego, consideremos nuevamente el evento $A$ como ``Adversario gana el juego'', entonces, la probabilidad de ganar el juego con dos rondas es la siguiente:
@@ -273,14 +273,14 @@ Vemos que:
 \begin{itemize}
     \item $\Pr[A \mid b = 0] = 1$
     \item $\Pr[A \mid b = 1] = \Pr[\pi(y_2) \neq y_2 + \pi(y_1)]$
-    
-    En este caso, el verificador elige una permutación $\pi:\{0,1\}^n \to \{0,1\}^n$ con \textbf{distribución uniforme}. Si $\pi(y_2) = y_2 + \pi(y_1)$, entonces el adversario da la respuesta equivocada. Así, vemos que:
-    \begin{align*}
-        \Pr[\pi(y_2) \neq y_2 + \pi(y_1)] &= 1 - \Pr[\pi(y_2) = y_2 + \pi(y_1)] \\
-        &= 1 - \frac{\text{casos favorables}}{\text{casos totales}} \\ 
-        &= 1 - \frac{2^n \cdot (2^n - 2)!}{(2^n)!} \\
-        &= 1 - \frac{1}{2^n - 1}
-    \end{align*}
+
+          En este caso, el verificador elige una permutación $\pi:\{0,1\}^n \to \{0,1\}^n$ con \textbf{distribución uniforme}. Si $\pi(y_2) = y_2 + \pi(y_1)$, entonces el adversario da la respuesta equivocada. Así, vemos que:
+          \begin{align*}
+              \Pr[\pi(y_2) \neq y_2 + \pi(y_1)] & = 1 - \Pr[\pi(y_2) = y_2 + \pi(y_1)]                       \\
+                                                & = 1 - \frac{\text{casos favorables}}{\text{casos totales}} \\
+                                                & = 1 - \frac{2^n \cdot (2^n - 2)!}{(2^n)!}                  \\
+                                                & = 1 - \frac{1}{2^n - 1}
+          \end{align*}
 \end{itemize}
 De la ecuación anterior:
 \begin{itemize}
@@ -289,10 +289,73 @@ De la ecuación anterior:
 \end{itemize}
 Finalmente, tenemos que
 \begin{align*}
-    \Pr[A] & = \Pr[A \mid b = 0] \cdot \frac{1}{2} + \Pr[A \mid b = 1] \cdot \frac{1}{2} \\
-           & = 1 \cdot \frac{1}{2} + \left(1 - \frac{1}{2^n - 1}\right) \cdot \frac{1}{2}    \\
+    \Pr[A] & = \Pr[A \mid b = 0] \cdot \frac{1}{2} + \Pr[A \mid b = 1] \cdot \frac{1}{2}  \\
+           & = 1 \cdot \frac{1}{2} + \left(1 - \frac{1}{2^n - 1}\right) \cdot \frac{1}{2} \\
            & = 1 - \frac{1}{2 \cdot (2^n - 1)}
 \end{align*}
 Por ende, el adversario gana el juego con una probabilidad significativamente mayor a $\frac{1}{2}$, y entonces OTP no es una PRP con dos rondas.
 
-\subsection{AES}
+\subsection{Funciones de hash}
+
+\paragraph{Definición.} Las funciones de hash \textbf{criptográficas} son funciones de un espacio de posibles mensajes a un espacio de mensajes de largo fijo:
+$$
+    h: \ca{M} \to \ca{H}
+$$
+
+$\ca{M}$ es el espacio de mensajes y $\ca{H}$ es el espacio de posibles valores de la función de hash. Por ejemplo:
+$$
+    \ca{M} = \{0,1\}^n \quad \text{y} \quad \ca{H} = \{0,1\}^{128}
+$$
+Decimos que $h(m)$ es el hash de un mensaje $m$. \medbreak
+
+\paragraph{Resistencia a preimágenes.} Una propiedad básica de las funciones de hash es que debe existir un algoritmo \textbf{eficiente}, tal que dado un mensaje $m \in \ca{M}$, calcula $h(m)$. Además, no debe existir un algoritmo eficiente que, dado $x \in \ca{H}$, encuentra $m \in \ca{M}$ tal que $h(m) = x$. Esta propiedad se denota como ser resistente a preimagen.
+
+\paragraph{¿Funciones criptográficas?} Insistimos en el adjetivo criptográficas ya que estas funciones deben ser construidas para ser seguras y soportar ataques de adversarios, en la medida que sea posible. Por ejemplo, consideremos la siguiente función de hash:
+$$
+    h(m) = (A \cdot m + B) \bmod C
+$$
+
+Suponemos que los mensajes son números naturales y que $A$, $B$ y $C$ son constantes, con $C$ un número primo. ¿Es esta función resistente a preimagen? Digamos que $h(m) = (13 \cdot m + 97) \bmod 641$. ¿Podemos encontrar un mensaje $m$ tal que $h(m) = 200$? Una combinación de herramientas de aritmética modular nos pueden dar una respuesta rápida:
+$$
+    h(501) = (13 \cdot 501 + 97) \bmod 641 = 200
+$$
+
+Concluimos entonces que $h$ \textbf{no} es resistente a preimágenes.
+
+\paragraph{Resistencia a colisiones.} Otra propiedad de las funciones de hash es que no debe existir un algoritmo eficiente que pueda encontrar $m_1, m_2 \in \ca{M}$ tales que $m_1 \neq m_2$ y $h(m_1) = h(m_2)$. Esta propiedad se denota como ser resistente colisiones.
+
+\paragraph{Definición formal.} Una función de hash es un par $(\gen, h)$ tal que:
+\begin{itemize}
+    \item $\gen$ es un algoritmo aleatorizado de tiempo polinomial. $\gen$ toma como entrada un parámetro de seguridad $1^n$ y genera una llave $s$.
+    \item $h$ es un algoritmo de tiempo polinomial, que toma como entrada $s$ y un mensaje $m \in \{0,1\}^*$, y retorna un hash $h^s(m) \in \{0,1\}^{\ell(n)}$, donde $\ell$ es un polinomio fijo.
+\end{itemize}
+
+Si $m \in \{0,1\}^{\ell'(n)}$ para un polinomio fijo $\ell'$ tal que $\ell'(n) > \ell(n)$, entonces $(\gen, h)$ es una función de hash de \textbf{largo fijo}.
+
+\paragraph{Funciones despreciables.} Sea $\mathbb{R}^+$ el conjunto de los números reales positivos, y $\mathbb{R}_0^+ = \mathbb{R}^+ \cup \{0\}$. Una función $f: \mathbb{N} \to \mathbb{R}_0^+$ es \textbf{despreciable} si:
+\alignformula{
+    \forall \text{ polinomio } p: \mathbb{N} \to \mathbb{R}.\; \exists n_0 \in \mathbb{N}.\; \forall n \geq n_0. \; f(n) < \frac{1}{p(n)}
+}
+\begin{itemize}
+    \item Por ejemplo, las funciones $f(n) = 2^{-n}$ y $f(n) = n^{-\log(n)}$ son funciones despreciables.
+    \item Si $f$ y $g$ son funciones despreciables y $p$ es un polinomio, entonces $f + g$ y $f \cdot p$ son funciones despreciables.
+\end{itemize}
+
+\paragraph{Formalizando la resistencia a colisiones.} Considere una función de hash $(\gen, h)$. Definimos el juego $\texttt{Hash-Col}(n)$:
+\begin{enumerate}
+    \item El verificador genera $s = \gen(1^n)$ y se lo entrega al adversario.
+    \item El adversario elige mensajes $m_1$ y $m_2$ con $m_1 \neq m_2$.
+    \item El adversario gana el juego si $h^s(m_1) = h^s(m_2)$, en caso contrario, pierde.
+\end{enumerate}
+
+Una función de hash $(\gen, h)$ se dice resistente a colisiones si \textbf{para todo adversario que funciona como un algoritmo aleatorizado de tiempo polinomial}, existe una función despreciable $f(n)$ tal que:
+\alignformula{
+    \Pr[\text{Adversario gane } \texttt{Hash-Col}(n)] \leq f(n)
+}
+
+Como colorario de esta definición, si una función de hash es resistente a colisiones, entonces es resistente a preimágen.
+
+% \subsection{MAC}
+
+% \subsection{AES}
+
