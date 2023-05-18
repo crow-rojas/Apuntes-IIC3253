@@ -1,0 +1,112 @@
+\section[Autentificación]{Definiciones y herramientas para la autentificación}
+
+\subsection{Funciones de hash}
+
+\paragraph{Definición.} Las funciones de hash \textbf{criptográficas} son funciones de un espacio de posibles mensajes a un espacio de mensajes de largo fijo:
+$$
+    h: \ca{M} \to \ca{H}
+$$
+
+$\ca{M}$ es el espacio de mensajes y $\ca{H}$ es el espacio de posibles valores de la función de hash. Por ejemplo:
+$$
+    \ca{M} = \{0,1\}^n \quad \text{y} \quad \ca{H} = \{0,1\}^{128}
+$$
+Decimos que $h(m)$ es el hash de un mensaje $m$. \medbreak
+
+\paragraph{Resistencia a preimágenes.} Una propiedad básica de las funciones de hash es que debe existir un algoritmo \textbf{eficiente}, tal que dado un mensaje $m \in \ca{M}$, calcula $h(m)$. Además, no debe existir un algoritmo eficiente que, dado $x \in \ca{H}$, encuentra $m \in \ca{M}$ tal que $h(m) = x$. Esta propiedad se denota como ser resistente a preimagen.
+
+\paragraph{¿Funciones criptográficas?} Insistimos en el adjetivo criptográficas ya que estas funciones deben ser construidas para ser seguras y soportar ataques de adversarios, en la medida que sea posible. Por ejemplo, consideremos la siguiente función de hash:
+$$
+    h(m) = (A \cdot m + B) \bmod C
+$$
+
+Suponemos que los mensajes son números naturales y que $A$, $B$ y $C$ son constantes, con $C$ un número primo. ¿Es esta función resistente a preimagen? Digamos que $h(m) = (13 \cdot m + 97) \bmod 641$. ¿Podemos encontrar un mensaje $m$ tal que $h(m) = 200$? Una combinación de herramientas de aritmética modular nos pueden dar una respuesta rápida:
+$$
+    h(501) = (13 \cdot 501 + 97) \bmod 641 = 200
+$$
+
+Concluimos entonces que $h$ \textbf{no} es resistente a preimágenes.
+
+\paragraph{Resistencia a colisiones.} Otra propiedad de las funciones de hash es que no debe existir un algoritmo eficiente que pueda encontrar $m_1, m_2 \in \ca{M}$ tales que $m_1 \neq m_2$ y $h(m_1) = h(m_2)$. Esta propiedad se denota como ser resistente colisiones.
+
+\paragraph{Definición formal.} Una función de hash es un par $(\gen, h)$ tal que:
+\begin{itemize}
+    \item $\gen$ es un algoritmo aleatorizado de tiempo polinomial. $\gen$ toma como entrada un parámetro de seguridad $1^n$ y genera una llave $s$.
+    \item $h$ es un algoritmo de tiempo polinomial, que toma como entrada $s$ y un mensaje $m \in \{0,1\}^*$, y retorna un hash $h^s(m) \in \{0,1\}^{\ell(n)}$, donde $\ell$ es un polinomio fijo.
+\end{itemize}
+
+Si $m \in \{0,1\}^{\ell'(n)}$ para un polinomio fijo $\ell'$ tal que $\ell'(n) > \ell(n)$, entonces $(\gen, h)$ es una función de hash de \textbf{largo fijo}.
+
+\paragraph{Funciones despreciables.} Sea $\mathbb{R}^+$ el conjunto de los números reales positivos, y $\mathbb{R}_0^+ = \mathbb{R}^+ \cup \{0\}$. Una función $f: \mathbb{N} \to \mathbb{R}_0^+$ es \textbf{despreciable} si:
+\alignformula{
+    \forall \text{ polinomio } p: \mathbb{N} \to \mathbb{R}.\; \exists n_0 \in \mathbb{N}.\; \forall n \geq n_0. \; f(n) < \frac{1}{p(n)}
+}
+\begin{itemize}
+    \item Por ejemplo, las funciones $f(n) = 2^{-n}$ y $f(n) = n^{-\log(n)}$ son funciones despreciables.
+    \item Si $f$ y $g$ son funciones despreciables y $p$ es un polinomio, entonces $f + g$ y $f \cdot p$ son funciones despreciables.
+\end{itemize}
+
+\paragraph{Formalizando la resistencia a colisiones.} Considere una función de hash $(\gen, h)$. Definimos el juego $\texttt{Hash-Col}(n)$:
+\begin{enumerate}
+    \item El verificador genera $s = \gen(1^n)$ y se lo entrega al adversario.
+    \item El adversario elige mensajes $m_1$ y $m_2$ con $m_1 \neq m_2$.
+    \item El adversario gana el juego si $h^s(m_1) = h^s(m_2)$, en caso contrario, pierde.
+\end{enumerate}
+
+Una función de hash $(\gen, h)$ se dice resistente a colisiones si \textbf{para todo adversario que funciona como un algoritmo aleatorizado de tiempo polinomial}, existe una función despreciable $f(n)$ tal que:
+\alignformula{
+    \Pr[\text{Adversario gane } \texttt{Hash-Col}(n)] \leq f(n)
+}
+
+Como colorario de esta definición, si una función de hash es resistente a colisiones, entonces es resistente a preimágen.
+
+\subsection{Códigos de autentificación de mensajes (MAC)}
+\fig{img/cap3/1.png}{0.25}{Escenario de autentificación de mensajes}
+
+Un objetivo básico de la criptografía es permitir que las partes se comuniquen de manera segura. Pero, ¿qué implica que ``la comunicación sea segura''? Antes, mostramos cómo es posible lograr \textit{perfect secrecy}; es decir, cómo se puede utilizar la encriptación para evitar que un adversario aprenda algo sobre los mensajes enviados a través de un canal público. Sin embargo, no toda la encriptación se relaciona con \textit{perfect secrecy}, y no todos los adversarios se limitan a solo leer mensajes encriptados que pasan por el canal. En muchos casos, es de igual o mayor importancia garantizar la integridad del mensaje (o la autenticación del mensaje) contra un adversario que puede introducir mensajes en el canal o modificar mensajes en tránsito.
+
+\paragraph{Encriptación vs. autentificación.} Mantener un mensaje secreto y mantener la integridad de un mensaje son objetivos distintos, y por ende también lo son las técnicas y herramientas para lograr cada una de esas tareas. Desafortunadamente, mantener un mensaje secreto y la integridad del mismo a menudo se confunden y se entrelazan innecesariamente, así que seamos claros desde el principio: la encriptación no proporciona (en general) ninguna integridad, y \textbf{no se debe suponer que la encriptación garantiza la autenticación del mensaje} a menos que esté específicamente diseñada con ese propósito en mente.
+
+\paragraph{Definiciones para MAC.} Dado el problema anterior, necesitamos un mecanismo que ayude a las partes comunicantes a saber si el mensaje que se ha enviado a sido manipulado o no. La herramienta para esto son los \textit{códigos de autentificación de mensajes} (MAC). Ahora, tendremos un espacio de llaves $\ca{K}$, un espacio de mensajes $\ca{M}$ y un espacio de \textbf{tags} $\ca{T}$, con los que definimos el esquema de autentificación de mensajes $(\ttt{Gen}, \ttt{Mac}, \ttt{Vrfy})$ tal que:
+
+\begin{itemize}
+    \item $\ttt{Gen}$ es un algoritmo de generación de llaves que recibe un \textbf{parámetro de seguridad} $1^n$ y retorna una llave $k$, con $|k| \geq n$.
+    \item $\ttt{Mac}$ es una familia de funciones:
+    $$
+    \ttt{Mac} = \{\ttt{Mac}_k \mid k \in \ca{K}\}, \quad \text{con } \ttt{Mac}_k:\ca{M} \to \ca{T}, \forall k \in \ca{K}
+    $$
+    Es decir, es un algoritmo de generación de tags. Recibe un mensaje $m$ y una llave $k$ y retorna un tag $t$. Denotamos esto como $t = \ttt{Mac}_k(m)$
+    \item $\ttt{Vrfy}$ es una familia de funciones: 
+    $$
+    \ttt{Vrfy} = \{\ttt{Vrfy}_k \mid k \in \ca{K}\}, \quad \text{con } \ttt{Vrfy}_k:\ca{M} \times \ca{T} \to \{0,1\}, \forall k \in \ca{K}
+    $$
+    Es decir, es un algoritmo de verificación. Recibe una llave $k$, un mensaje $m$ y un tag $t$. Retorna un bit $b$, con $b = 1$ un mensaje válido y $b = 0$ un mensaje inválido. Denotamos esto como $b = \ttt{Vrfy}_k(m, t)$.
+\end{itemize}
+
+\paragraph*{Requisito para MAC.} En un esquema de autentificación de mensajes $(\ttt{Gen}, \ttt{Mac}, \ttt{Vrfy})$ es necesario que para todo $n$, para toda llave $k \in \ca{K}$ que retorna $\ttt{Gen}(1^n)$  y para cada mensaje $m \in \ca{M}$, se cumpla que:
+\alignformula{
+\ttt{Vrfy}_k(m, \ttt{Mac}_k(m)) = 1
+}
+\paragraph{Juego para MAC.} Un atacante puede romper el esquema de autentificación si logra generar una un tag falso, es decir, si produce un mensaje $m$ junto con una etiqueta $t$ tal que:
+\begin{enumerate}
+    \item $t$ es una etiqueta válida para el mensaje $m$ (es decir, $\ttt{Vrfy}_k(m,t) = 1$), y
+    \item las partes comunicantes no habían autenticado previamente $m$.
+\end{enumerate}
+Estas condiciones implican que si el adversario enviara $(m,t)$ a una de las partes comunicantes, entonces esa parte sería engañada erróneamente pensando que $m$ se originó en la otra parte legítima (ya que $\ttt{Vrfy}_k (m, t) = 1$) aunque no fue así. \bigbreak
+
+Decimos que MAC es \textit{inmune a falsificación (existentially unforgeable)} cuando el adversario es incapaz de falsificar un tag válido para cualquier mensaje. En base a esto, podemos definir el juego $\ttt{Forge}_{\ttt{Mac}}(n)$:
+\begin{enumerate}
+    \item El verificador invoca $\gen(1^n)$ para generar una llave $k$, con $n$ el parámetro de seguridad.
+    \item El adversario envía $m_0 \in \ca{M}$ al verificador.
+    \item El verificador responde $\mac_k(m_0)$.
+    \item Los pasos 2 y 3 se repiten tantas veces como quiera el adversario.
+    \item El adversario envía $(m,t)$, siendo $m$ un mensaje que no había enviado antes.
+\end{enumerate}
+Decimos que el adversario \textbf{gana} el juego si se cumple que $\ver_k(m, t) = 1$, y pierde en caso contrario.
+
+\paragraph{Seguridad de MAC.} Decimos que un código de autentificación de mensajes MAC es inmune a falsificación, o en otras palabras, es \textbf{seguro}, si todo adversario $A$ que juega $\ttt{Forge}_{\mac}(n)$ en tiempo polinomial en $n$ tiene una probabilidad despreciable de ganar el juego, es decir:
+\alignformula{
+    \Pr[A \text{ gane } \ttt{Forge}_{\mac}(n)] \leq f(n)
+}
+con $f(n)$ una función despreciable.
+\paragraph{Replay attacks.} Los códigos de autenticación de mensajes no ofrecen protección contra \textit{replay attacks} (ataques de repetición), en los que un atacante reenvía un mensaje previamente autenticado con su etiqueta válida. Aunque son una amenaza importante, un MAC no puede proteger contra estos ataques, ya que \textbf{no está diseñado para resistirlos}. La protección debe ser manejada a nivel de aplicación, ya que la decisión de si un mensaje repetido debe ser tratado como ``válido'' puede depender de la misma aplicación como tal.

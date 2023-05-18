@@ -145,3 +145,4 @@ TSWLatexianTemp*
 *.xwm
 __latexindent_temp.tex
 clases/
+.DS_Store
